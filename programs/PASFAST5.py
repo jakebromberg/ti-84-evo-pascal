@@ -1,5 +1,6 @@
 from ti_draw import *
 from time import monotonic
+import gc
 import ti_graphics as gr
 
 # Set True to time only the math and planning (no drawing calls)
@@ -129,6 +130,11 @@ def plan_all(N, W, H, OY, bad):
     p = z
     for y in range(H):
         n = y + 1
+        if not y & 15:
+            # The plan nearly fills the calculator's memory. Clearing out
+            # the dead rows regularly keeps the free space in one piece,
+            # so a growing list can always find room.
+            gc.collect()
         v = R.to_bytes(n, 'little')
         x0 = (W - n) // 2
         k = v.find(z, 1)
@@ -177,6 +183,7 @@ def plan_all(N, W, H, OY, bad):
             k = v.find(z, k)
         p = v
         wl = wild[y]
+        wild[y] = None      # not needed again; frees it
         if wl:
             wl.sort()
             ba = bytearray(v)
@@ -237,6 +244,8 @@ def main():
         if not off:
             break
         bad.update(off)
+        # there is not room for two plans at once
+        out = sides = shapes = None
 
     if not COMPUTE_ONLY:
         clear()
