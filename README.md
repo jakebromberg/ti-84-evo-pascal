@@ -2,7 +2,7 @@
 
 Python programs for the TI-84 Evo that draw Pascal's triangle mod 16: 210 rows, one pixel per entry, each remainder in its own hue. The repo also holds the benchmarks and probes used to find the fastest way to draw it, and what they revealed about the Evo's Python.
 
-![PASFAST5 on the calculator: the finished triangle, drawn in 43.54 seconds](docs/pasfast5.png)
+![PASFAST6 on the calculator: the finished triangle, drawn in 41.58 seconds](docs/pasfast6.png)
 
 ## Results
 
@@ -17,6 +17,9 @@ All times were measured on a TI-84 Evo running OS 7.0.0.3996. Every version draw
 | `PASFAST3` | The same layers through the native `ti_graphics` calls | 9,111 boxes, 125 color changes | 50.6 s |
 | `PASFAST4` | The bottom layer as two polygons instead of 210 boxes | 8,901 boxes plus any repairs, 2 polygons, 125 color changes | 48.8 s |
 | `PASFAST5` | The sides of the zero triangles as lines, drawn last | 6,627 boxes plus any repairs, 744 lines, 2 polygons, 133 color changes | 43.5 s |
+| `PASFAST6` | Single pixels that repeat every 4 along a row as dotted lines | 6,110 boxes plus any repairs, 744 lines, 222 dotted lines, 2 polygons, 147 color changes | 43.8 s |
+
+**These times are a few percent too high, and the last two cannot be compared with each other.** Each was taken while a computer fetched a screenshot from the calculator every few seconds to see whether the program had finished, and every screenshot makes the calculator stop and send its screen. How often that happened was not the same from run to run. With no screenshot taken while the program drew, `PASFAST6` took 41.58 s, against 43.78 s with them. Run the same way, `PASFAST5` with the memory changes described under [The interpreter](#what-the-probes-found-about-the-evos-python) took 42.32 s, so the dotted lines save about 0.7 s. Each of those is a single run.
 
 The row math is not the bottleneck: computing all 210 rows takes 0.04 s. Nearly all the time is the number of drawing calls, at 4 to 6 ms each.
 
@@ -31,7 +34,8 @@ The name on the calculator is the file name without `.py`, cut to 8 characters.
 | `programs/PASFAST2.py` | Layered boxes. Documented calls only. |
 | `programs/PASFAST3.py` | Layered boxes through undocumented native calls. |
 | `programs/PASFAST4.py` | `PASFAST3` with the bottom layer drawn as two polygons. |
-| `programs/PASFAST5.py` | `PASFAST4` with the sides of the zero triangles drawn as lines. The fastest. |
+| `programs/PASFAST5.py` | `PASFAST4` with the sides of the zero triangles drawn as lines. |
+| `programs/PASFAST6.py` | `PASFAST5` with single pixels four apart on a row drawn as dotted lines, and a planner that needs much less memory. The fastest. |
 | `benchmarks/PASBENCH.py` | Draws the triangle row by row and then color by color, and times each. |
 | `benchmarks/CALLBENCH.py` | Times `set_color`, `fill_rect`, `plot_xy` and `ti_image.set_pixel` per call. On the calculator as `CALLBENC`. |
 | `benchmarks/POLYBNCH.py` | Times `draw_line`, `draw_poly`, `fill_poly` and `ti_plotlib.scatter`, and draws test shapes. |
@@ -54,8 +58,9 @@ The probes' reports are too long for the screen, so each draws its report as a b
 4. **Native calls.** `ti_draw` is a Python wrapper around the native `ti_graphics` module. Calling `ti_graphics.fillRect` directly saves about 0.8 ms per box.
 5. **Polygons for the bottom layer.** Every row starts and ends with 1, so the bottom layer is one full-width box per row in the same color: a solid triangle. `PASFAST4` paints it with two `fillPolygon` calls, then reads both ends of every row back with `getPixel` and repairs any pixel the polygons got wrong. The calculator's result matched the exact picture on every pixel.
 6. **Lines for the sides of the zero triangles.** Every block of zeros in the picture is an upside-down triangle: two zeros side by side put a zero below them, so a run of zeros comes back one entry shorter on each row. The entries along its two slanted sides all have one value, because each is the entry above it plus a zero. On screen such a side is a straight line, so `PASFAST5` paints each with one `drawLine` call, after the boxes. The boxes no longer have to get those entries right, so the boxes on either side of them join up: 6,627 boxes and 744 lines do the work of 8,901 boxes. Only triangles 3 or more entries wide are used; the sides of a single zero are too short to pay for a line.
+7. **Dotted lines for single pixels.** More than half of `PASFAST5`'s boxes paint one pixel. Pen style 3 makes `drawLine` paint only every fourth pixel of a line, so `PASFAST6` joins one-pixel boxes of one color that sit 4, 8, 12 or more pixels apart on a row into one dotted line, provided every fourth pixel between them has that color in the finished picture too. 222 dotted lines replace 517 boxes. A line costs more than a box (about 6.9 ms against 5.5 ms), so the 176 lines that replace only two boxes gain little, and no pen style paints every other pixel, which would have reached far more of them.
 
-`drawLine` is undocumented, so `PASFAST5` first draws one line of each shape it plans to use (8 of them here) and reads it back. If a shape came out wrong it would plan again without that shape and show the number of shapes dropped under the time. On the calculator all 8 passed.
+`drawLine` is undocumented, so `PASFAST5` first draws one line of each shape it plans to use (8 of them here) and reads it back. If a shape came out wrong it would plan again without that shape and show the number of shapes dropped under the time. On the calculator all 8 passed. `PASFAST6` tests the dotted pen the same way, with two dotted lines; if they came out wrong it would use boxes instead and show `1 off`. They passed too.
 
 ## Where the time goes
 
@@ -128,7 +133,9 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 
 **The interpreter**
 
-- It reports itself as `tipython` 1.13 with Python 3.4.0 syntax. About 163 KB of memory is shared by the stored programs and the running one. With four programs stored (27 KB of source) a program started with 148 KB free; with seven stored (51 KB) `PHASES` failed with `MemoryError` before drawing anything, and the same program ran once three of them were cut down to one line each. `PASFAST5`'s plan takes about 107 KB while it runs, so it needs most of the memory to itself.
+- It reports itself as `tipython` 1.13 with Python 3.4.0 syntax. It has about 163 KB of memory; `PHASES` started with 148 KB free and had 41 KB free after planning.
+- Planning the picture ran out of memory three times, each time with `MemoryError` while a list of boxes was growing: `PHASES` with 51 KB of programs stored on the calculator, the first `PASFAST6` with 33 KB stored, and `PASFAST5` with 34 KB stored, although it had run earlier with the same amount stored. `PHASES` ran once 24 KB of stored programs were removed. So the planner of `PASFAST5` sits at the limit, and how much is stored matters without deciding the matter alone. The cause was in the planner: it kept a list of side entries for each of the 210 rows until the end. `PASFAST6` drops each list once its row is planned and calls `gc.collect()` every 16 rows so that the free memory stays in one piece. It has run every time since, and `PASFAST5` with the same two changes ran where the original had just failed.
+- Planning memory can be compared on a computer. Under 64-bit MicroPython, where a list takes twice the room, `PASFAST5` needs a 277k heap to compile and plan, and `PASFAST6` needs 176k. The first `PASFAST6` needed 283k and failed on the calculator with the same error text the computer gives. A tool test holds `PASFAST6` to 200k.
 - Importable beyond the TI modules: `sys`, `gc`, `array`, `math`, `random`, `time`, `collections`, `builtins`. There is no `os`, `struct` or `framebuf`. `open` exists, but it returned `None` for the one file tried (`ti_plotlib.py`).
 - `time` has `monotonic`, `sleep`, `ticks_ms` and `ticks_diff`.
 - `x in some_bytearray` raises `NotImplementedError`; use a list.
@@ -138,13 +145,14 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 The programs were sent over USB with [evo_usb_py](https://github.com/jakebromberg/evo_usb_py), a fork with the OS-update command removed:
 
 ```sh
-EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py programs/PASFAST5.py PASFAST5
+EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py programs/PASFAST6.py PASFAST6
 EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py --screenshot shot.png
 ```
 
 - Names are at most 8 letters and digits.
 - Programs go to RAM, and the Python app only lists programs in RAM. A RAM clear removes them all, so keep copies.
-- Stored programs appear to take memory away from the running one. Keep only the programs in use on the calculator: `PASFAST5` needs about 107 KB free to plan the picture. Sending a one-line file under an old program's name frees its space.
+- Stored programs appear to take memory away from the running one. Keep only the programs in use on the calculator. Sending a one-line file under an old program's name frees its space.
+- **Take no screenshots while timing a program.** Each one stops the calculator while it sends its screen; ten of them added about 2 seconds to a 42-second run. Take one after the program has finished.
 - **While a program is on screen, send nothing but screenshots.** The calculator's RAM was cleared twice during this work. The second time came right after a file listing was requested while a program's final screen was showing; that request also tells the calculator to go to its home screen. This is the likely cause, not a confirmed one. `tools/screen_kind.py` tells a running program's screen from a menu.
 
 ## Checking programs on a computer
@@ -155,9 +163,9 @@ EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py --screenshot shot.p
 sh tools/check.sh
 ```
 
-- The six triangle programs must draw the exact picture: every pixel right, nothing outside the triangle, and no text over it.
+- The seven triangle programs must draw the exact picture: every pixel right, nothing outside the triangle, and no text over it.
 - Benchmarks and probes only have to finish without an error.
-- The tools' own tests run last, against a real screenshot and a saved device report.
+- The tools' own tests run last, against a real screenshot and a saved device report. Two of them run `PASFAST6`: once with `STANDIN_PEN=solid`, which makes the stand-in ignore the pen style, to check that it falls back to boxes and still draws the exact picture; and once in a 200k heap, to check that planning stays small.
 
 The stand-ins in `tools/standins/` follow the behavior listed above. They do not model memory limits, timing (the clock never advances), or anything the probes did not measure, so a pass here is necessary but not sufficient. In particular the stand-in `fillPolygon` uses an ordinary scanline fill, not the calculator's edge rule, so `PASFAST4` passes there only because its read-back repair works.
 
