@@ -1,7 +1,10 @@
 """Dry-run stand-in for the Evo's native ti_graphics.
 
 Coordinates are full-screen: the drawing area starts 30 rows down. fillRect, setPixel, drawLine and drawPolyLine follow what the GRPROBE programs measured on the calculator; fillPolygon, drawString and drawRect are rough or empty.
+
+Set the environment variable STANDIN_PEN=solid to make drawLine ignore the pen style, as a calculator would whose setPen does not behave as measured; programs must then fall back.
 """
+import os
 import ti_draw
 class Color: RED = 1
 class Font: SMALL = 0; MEDIUM = 1; LARGE = 2; ICON = 3; SMALLD = 4
@@ -61,6 +64,7 @@ def setFont(f): pass
 _pen = [0]
 # Which pixels of a 1-pixel line each pen style paints, counted from the line's first point (measured by PENPROBE)
 _PATTERNS = [None, lambda i: i % 4 in (0, 3), lambda i: i % 6 in (0, 1, 2, 5), lambda i: i % 4 == 3]
+if os.getenv("STANDIN_PEN") == "solid": _PATTERNS = [None] * 4
 def setPen(style, thickness):
     # Styles are modeled for drawLine only; thickness is accepted and ignored (lines stay 1 pixel thick)
     if isinstance(style, str) or isinstance(thickness, str): raise TypeError("can't convert str to float")
