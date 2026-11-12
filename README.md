@@ -2,7 +2,7 @@
 
 Python programs for the TI-84 Evo that draw Pascal's triangle mod 16: 210 rows, one pixel per entry, each remainder in its own hue. The repo also holds the benchmarks and probes used to find the fastest way to draw it, and what they revealed about the Evo's Python.
 
-![PASFAST4 on the calculator: the finished triangle, drawn in 48.83 seconds](docs/pasfast4.png)
+![PASFAST5 on the calculator: the finished triangle, drawn in 43.54 seconds](docs/pasfast5.png)
 
 ## Results
 
@@ -16,6 +16,7 @@ All times were measured on a TI-84 Evo running OS 7.0.0.3996. Every version draw
 | `PASFAST2` | Layered boxes: long ones first, shorter ones on top | 9,111 boxes, 125 color changes | 58.6 s |
 | `PASFAST3` | The same layers through the native `ti_graphics` calls | 9,111 boxes, 125 color changes | 50.6 s |
 | `PASFAST4` | The bottom layer as two polygons instead of 210 boxes | 8,901 boxes plus any repairs, 2 polygons, 125 color changes | 48.8 s |
+| `PASFAST5` | The sides of the zero triangles as lines, drawn last | 6,627 boxes plus any repairs, 744 lines, 2 polygons, 133 color changes | 43.5 s |
 
 The row math is not the bottleneck: computing all 210 rows takes 0.04 s. Nearly all the time is the number of drawing calls, at 4 to 6 ms each.
 
@@ -29,7 +30,8 @@ The name on the calculator is the file name without `.py`, cut to 8 characters.
 | `programs/PASFAST.py` | Row backgrounds. Documented calls only. |
 | `programs/PASFAST2.py` | Layered boxes. Documented calls only. |
 | `programs/PASFAST3.py` | Layered boxes through undocumented native calls. |
-| `programs/PASFAST4.py` | `PASFAST3` with the bottom layer drawn as two polygons. The fastest. |
+| `programs/PASFAST4.py` | `PASFAST3` with the bottom layer drawn as two polygons. |
+| `programs/PASFAST5.py` | `PASFAST4` with the sides of the zero triangles drawn as lines. The fastest. |
 | `benchmarks/PASBENCH.py` | Draws the triangle row by row and then color by color, and times each. |
 | `benchmarks/CALLBENCH.py` | Times `set_color`, `fill_rect`, `plot_xy` and `ti_image.set_pixel` per call. On the calculator as `CALLBENC`. |
 | `benchmarks/POLYBNCH.py` | Times `draw_line`, `draw_poly`, `fill_poly` and `ti_plotlib.scatter`, and draws test shapes. |
@@ -49,6 +51,9 @@ The probes' reports are too long for the screen, so each draws its report as a b
 3. **One color at a time.** A color change costs about 4 ms, so boxes are grouped by layer and color and each group is drawn in one go, lower layers first.
 4. **Native calls.** `ti_draw` is a Python wrapper around the native `ti_graphics` module. Calling `ti_graphics.fillRect` directly saves about 0.8 ms per box.
 5. **Polygons for the bottom layer.** Every row starts and ends with 1, so the bottom layer is one full-width box per row in the same color: a solid triangle. `PASFAST4` paints it with two `fillPolygon` calls, then reads both ends of every row back with `getPixel` and repairs any pixel the polygons got wrong. The calculator's result matched the exact picture on every pixel.
+6. **Lines for the sides of the zero triangles.** Every block of zeros in the picture is an upside-down triangle: two zeros side by side put a zero below them, so a run of zeros comes back one entry shorter on each row. The entries along its two slanted sides all have one value, because each is the entry above it plus a zero. On screen such a side is a straight line, so `PASFAST5` paints each with one `drawLine` call, after the boxes. The boxes no longer have to get those entries right, so the boxes on either side of them join up: 6,627 boxes and 744 lines do the work of 8,901 boxes. Only triangles 3 or more entries wide are used; the sides of a single zero are too short to pay for a line.
+
+`drawLine` is undocumented, so `PASFAST5` first draws one line of each shape it plans to use (8 of them here) and reads it back. If a shape came out wrong it would plan again without that shape and show the number of shapes dropped under the time. On the calculator all 8 passed.
 
 ## What the probes found about the Evo's Python
 
@@ -92,6 +97,7 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 - Native coordinates are full-screen: the drawing area starts at y = 30.
 - `fillRect(x, y, w, h)` fills exactly `w` by `h` pixels, and 1×1 works. `drawLine` includes both end points. `drawRect(x, y, w, h)` outlines `w + 1` by `h + 1` pixels.
 - `setColor` takes one `(r, g, b)` tuple. `setPixel(x, y, (r, g, b))` takes the color as its third argument. `drawPolyLine` and `fillPolygon` take one list of `(x, y)` tuples.
+- For the lines `PASFAST5` uses, which move one pixel sideways every two rows and are 2, 4, 8 or 16 rows long, `drawLine` paints exactly one pixel on each row, where the picture's entries are. Other slopes and lengths were not tested.
 - `popImage()` restores a region saved by `pushImage(x, y, w, h)` in the same place. It cannot copy a region elsewhere.
 - `fillPolygon` leaves out the bottom row of the shape, and its slanted edges do not follow the triangle's staircase exactly. For the full triangle (top at screen (159, 30), bottom row x 55 to 264 at y 239), corners `(159, 30), (54, 240), (264, 240)` get every right end exactly but miss the leftmost pixel on 41 rows; corners `(159, 30), (54, 239), (264, 239)` get the left edge exactly on every row but the last and spill one pixel past the right edge on 41 rows. An upside-down 15-row triangle drawn with its exact corners is right on every row except its one-pixel tip. `docs/device-reports/TRIPROBE.txt` has all 32 corner choices tried.
 - `fillPolygon` takes at most 50 corners. It fills shapes that are not convex correctly, and where a path overlaps itself the overlap is left empty. A path that goes out and comes back along the same line paints that line one pixel wide. Corners with fractions are accepted and the fractions dropped.
@@ -112,7 +118,7 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 The programs were sent over USB with [evo_usb_py](https://github.com/jakebromberg/evo_usb_py), a fork with the OS-update command removed:
 
 ```sh
-EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py programs/PASFAST4.py PASFAST4
+EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py programs/PASFAST5.py PASFAST5
 EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py --screenshot shot.png
 ```
 
@@ -128,7 +134,7 @@ EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py --screenshot shot.p
 sh tools/check.sh
 ```
 
-- The five triangle programs must draw the exact picture: every pixel right, nothing outside the triangle, and no text over it.
+- The six triangle programs must draw the exact picture: every pixel right, nothing outside the triangle, and no text over it.
 - Benchmarks and probes only have to finish without an error.
 - The tools' own tests run last, against a real screenshot and a saved device report.
 

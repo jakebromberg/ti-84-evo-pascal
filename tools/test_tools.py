@@ -12,7 +12,7 @@ import screenshot  # noqa: E402
 import triangle  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-TRIANGLE_SHOT = os.path.join(ROOT, "docs", "pasfast4.png")
+TRIANGLE_SHOT = os.path.join(ROOT, "docs", "pasfast5.png")
 REPORT_SHOT = os.path.join(ROOT, "docs", "device-reports", "GRPROBE2.png")
 
 
