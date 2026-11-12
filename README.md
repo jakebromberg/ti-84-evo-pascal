@@ -42,6 +42,7 @@ The name on the calculator is the file name without `.py`, cut to 8 characters.
 | `probes/TRIPROBE.py` | Finds which corner points make `fillPolygon` paint a triangle's rows exactly. |
 | `probes/POLYRULE.py` | Measures what `fillPolygon` costs per corner, how it treats shapes that are not convex, and which rows of a shape it paints. |
 | `probes/PHASES.py` | `PASFAST5` with a timer around each phase, and the free memory before and after planning. |
+| `probes/PENPROBE.py` | Looks for a cheaper single pixel: what each font's smallest characters paint, what the pen styles do to lines, and whether a box's cost depends on its width. |
 
 The probes' reports are too long for the screen, so each draws its report as a block of black pixels that `tools/decode_bits.py` reads back from a screenshot. The decoded reports are in `docs/device-reports/`.
 
@@ -82,7 +83,7 @@ These are measurements from one calculator on OS 7.0.0.3996. The undocumented fu
 | `ti_graphics.getPixel` | 0.05 ms |
 | `ti_graphics.setColor` | 3.9 ms |
 | `ti_draw.set_color` | 4.1 ms |
-| `ti_graphics.fillRect` | 5.5 to 5.7 ms |
+| `ti_graphics.fillRect` | 5.5 to 5.7 ms, whatever the width (4.8 to 5.6 ms measured for 1, 2, 10 and 300 pixels) |
 | `ti_draw.fill_rect` | 6.0 to 6.5 ms |
 | `ti_graphics.setPixel` | 6.2 ms |
 | `ti_graphics.drawLine` | 6.5 ms |
@@ -91,7 +92,7 @@ These are measurements from one calculator on OS 7.0.0.3996. The undocumented fu
 | `ti_graphics.fillPolygon` | about 9 ms for 3 corners and about 2.2 ms for each corner after that (107 ms for 48); the size of the shape does not matter |
 | `ti_draw.plot_xy` | 12.5 ms |
 | `ti_graphics.drawPolyLine` | 6.2 ms for 2 points, about 2 ms per extra point, 50 points at most |
-| `ti_graphics.drawString` | 4.5 ms for 1 character, about 0.13 ms per extra character |
+| `ti_graphics.drawString` | 4.3 to 5.0 ms for 1 character depending on the font, about 0.15 ms per extra character |
 | `ti_graphics.pushImage` + `popImage` | 7.7 ms for 6×4 pixels, 8.4 ms for 100×60 |
 | `ti_plotlib.scatter` | about 7.4 ms per point |
 
@@ -114,6 +115,9 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 - `fillRect(x, y, w, h)` fills exactly `w` by `h` pixels, and 1×1 works. `drawLine` includes both end points. `drawRect(x, y, w, h)` outlines `w + 1` by `h + 1` pixels.
 - `setColor` takes one `(r, g, b)` tuple. `setPixel(x, y, (r, g, b))` takes the color as its third argument. `drawPolyLine` and `fillPolygon` take one list of `(x, y)` tuples.
 - For the lines `PASFAST5` uses, which move one pixel sideways every two rows and are 2, 4, 8 or 16 rows long, `drawLine` paints exactly one pixel on each row, where the picture's entries are. Other slopes and lengths were not tested.
+- `setFont(f)` picks the font for `drawString`: `Font.SMALL` is 0, `Font.MEDIUM` is 1 and is the one in use when a program starts, `Font.LARGE` is 2, `Font.ICON` is 3 and `Font.SMALLD` is 4. Text is painted in the pen color and leaves the pixels around its strokes alone.
+- No character in any font paints a single pixel, or a single run of pixels on one row. The smallest are `.` and `·` (code 183), which are 2 by 2 dots in the small fonts. So text is not a cheaper way to paint one pixel. `string_size(".")` returned `(10, 15)` in every font.
+- `setPen(style, thickness)` takes numbers, not names. Thickness 0, 1 and 2 give lines 1, 3 and 5 pixels thick. Style 0 (`Style.SMOOTH`) is solid. On a 1-pixel line, counting pixels from the line's first point: style 1 (`Style.DOTTED`) paints pixel 0, then 3 and 4, 7 and 8, and so on; style 2 (`Style.DASHED`) paints 0 to 2, then 5 to 8, 11 to 14, and so on; style 3, which has no name, paints only pixels 3, 7, 11, and so on. The pattern follows the line whatever its direction and carries on around the corners of `drawPolyLine`. A dotted line costs the same 6.5 to 6.7 ms as a solid one. `fillRect` ignores the pen.
 - `popImage()` restores a region saved by `pushImage(x, y, w, h)` in the same place. It cannot copy a region elsewhere.
 - `fillPolygon` leaves out the bottom row of the shape, and its slanted edges do not follow the triangle's staircase exactly. For the full triangle (top at screen (159, 30), bottom row x 55 to 264 at y 239), corners `(159, 30), (54, 240), (264, 240)` get every right end exactly but miss the leftmost pixel on 41 rows; corners `(159, 30), (54, 239), (264, 239)` get the left edge exactly on every row but the last and spill one pixel past the right edge on 41 rows. An upside-down 15-row triangle drawn with its exact corners is right on every row except its one-pixel tip. `docs/device-reports/TRIPROBE.txt` has all 32 corner choices tried.
 - `fillPolygon` takes at most 50 corners. It fills shapes that are not convex correctly, and where a path overlaps itself the overlap is left empty. A path that goes out and comes back along the same line paints that line one pixel wide. Corners with fractions are accepted and the fractions dropped.

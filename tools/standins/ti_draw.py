@@ -37,13 +37,16 @@ def show_draw(): pass
 
 # --- Undocumented-detail guesses below: only good enough for dry runs ---
 calls.update({"draw_line": 0, "draw_poly": 0, "fill_poly": 0})
-def _line(x1, y1, x2, y2):
+def _line(x1, y1, x2, y2, on=None):
+    # on(i) says whether the line's i-th pixel is painted; None paints them all
+    i = 0
     dx, dy = abs(x2 - x1), abs(y2 - y1)
     sx = 1 if x1 < x2 else -1
     sy = 1 if y1 < y2 else -1
     err = dx - dy
     while True:
-        _put(x1, y1)
+        if on is None or on(i): _put(x1, y1)
+        i += 1
         if x1 == x2 and y1 == y2: break
         e2 = 2 * err
         if e2 > -dy: err -= dy; x1 += sx
