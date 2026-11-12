@@ -38,6 +38,7 @@ The name on the calculator is the file name without `.py`, cut to 8 characters.
 | `probes/GRPROBE2.py` | Tests `drawPolyLine`, `fillPolygon`, `drawString` and `pushImage`/`popImage`. |
 | `probes/IMGPROBE.py` | Tests whether `ti_image.new_image` can make an off-screen image. It cannot. |
 | `probes/TRIPROBE.py` | Finds which corner points make `fillPolygon` paint a triangle's rows exactly. |
+| `probes/POLYRULE.py` | Measures what `fillPolygon` costs per corner, how it treats shapes that are not convex, and which rows of a shape it paints. |
 
 The probes' reports are too long for the screen, so each draws its report as a block of black pixels that `tools/decode_bits.py` reads back from a screenshot. The decoded reports are in `docs/device-reports/`.
 
@@ -66,7 +67,7 @@ These are measurements from one calculator on OS 7.0.0.3996. The undocumented fu
 | `ti_graphics.drawLine` | 6.5 ms |
 | `ti_image.set_pixel` | 7.4 ms |
 | `ti_draw.draw_line` | 8.3 ms |
-| `ti_graphics.fillPolygon` | 5 to 13 ms, whether it fills a 15-row triangle or the whole 210-row one |
+| `ti_graphics.fillPolygon` | about 9 ms for 3 corners and about 2.2 ms for each corner after that (107 ms for 48); the size of the shape does not matter |
 | `ti_draw.plot_xy` | 12.5 ms |
 | `ti_graphics.drawPolyLine` | 6.2 ms for 2 points, about 2 ms per extra point, 50 points at most |
 | `ti_graphics.drawString` | 4.5 ms for 1 character, about 0.13 ms per extra character |
@@ -93,6 +94,10 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 - `setColor` takes one `(r, g, b)` tuple. `setPixel(x, y, (r, g, b))` takes the color as its third argument. `drawPolyLine` and `fillPolygon` take one list of `(x, y)` tuples.
 - `popImage()` restores a region saved by `pushImage(x, y, w, h)` in the same place. It cannot copy a region elsewhere.
 - `fillPolygon` leaves out the bottom row of the shape, and its slanted edges do not follow the triangle's staircase exactly. For the full triangle (top at screen (159, 30), bottom row x 55 to 264 at y 239), corners `(159, 30), (54, 240), (264, 240)` get every right end exactly but miss the leftmost pixel on 41 rows; corners `(159, 30), (54, 239), (264, 239)` get the left edge exactly on every row but the last and spill one pixel past the right edge on 41 rows. An upside-down 15-row triangle drawn with its exact corners is right on every row except its one-pixel tip. `docs/device-reports/TRIPROBE.txt` has all 32 corner choices tried.
+- `fillPolygon` takes at most 50 corners. It fills shapes that are not convex correctly, and where a path overlaps itself the overlap is left empty. A path that goes out and comes back along the same line paints that line one pixel wide. Corners with fractions are accepted and the fractions dropped.
+- Because of the cost per corner, one polygon for several boxes does not pay: a box needs 4 corners, about 9 ms, against 5.7 ms for `fillRect`.
+- On each row, `fillPolygon` paints from the left edge to the right edge of the shape, both rounded to the nearest pixel. Walking each edge down from its top corner in steps of 1/256 pixel reproduces 932 of the 934 row ends measured in the first 128 rows of the test shapes. From the 128th row down, the whole-picture triangle has one end pixel wrong on every even row; the cause is not known.
+- A zero triangle (an upside-down block of zeros, top row from x = L to R at row y, tip at x = m on row t) is painted exactly, tip included, by the 4 corners `(L, y), (R, y), (m, t), (m + 1, t + 1)`. All 358 complete ones in the picture were checked. `docs/device-reports/POLYRULE.txt` has the full report.
 - `ti_image.new_image` and `ti_image.copy_image` raise "Unsupported operation."
 
 **The interpreter**

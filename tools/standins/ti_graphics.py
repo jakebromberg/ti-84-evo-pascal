@@ -33,7 +33,7 @@ def fillPolygon(pts):
     ti_draw.calls["fillPolygon"] += 1
     # Even-odd scanline fill sampled at pixel centers. The calculator's exact edge rule is not known.
     ys = [p[1] for p in pts]
-    for py in range(min(ys), max(ys) + 1):
+    for py in range(int(min(ys)), int(max(ys)) + 1):
         xs = []
         for i in range(len(pts)):
             (x1, y1), (x2, y2) = pts[i], pts[(i + 1) % len(pts)]
