@@ -41,6 +41,7 @@ The name on the calculator is the file name without `.py`, cut to 8 characters.
 | `probes/IMGPROBE.py` | Tests whether `ti_image.new_image` can make an off-screen image. It cannot. |
 | `probes/TRIPROBE.py` | Finds which corner points make `fillPolygon` paint a triangle's rows exactly. |
 | `probes/POLYRULE.py` | Measures what `fillPolygon` costs per corner, how it treats shapes that are not convex, and which rows of a shape it paints. |
+| `probes/PHASES.py` | `PASFAST5` with a timer around each phase, and the free memory before and after planning. |
 
 The probes' reports are too long for the screen, so each draws its report as a block of black pixels that `tools/decode_bits.py` reads back from a screenshot. The decoded reports are in `docs/device-reports/`.
 
@@ -54,6 +55,21 @@ The probes' reports are too long for the screen, so each draws its report as a b
 6. **Lines for the sides of the zero triangles.** Every block of zeros in the picture is an upside-down triangle: two zeros side by side put a zero below them, so a run of zeros comes back one entry shorter on each row. The entries along its two slanted sides all have one value, because each is the entry above it plus a zero. On screen such a side is a straight line, so `PASFAST5` paints each with one `drawLine` call, after the boxes. The boxes no longer have to get those entries right, so the boxes on either side of them join up: 6,627 boxes and 744 lines do the work of 8,901 boxes. Only triangles 3 or more entries wide are used; the sides of a single zero are too short to pay for a line.
 
 `drawLine` is undocumented, so `PASFAST5` first draws one line of each shape it plans to use (8 of them here) and reads it back. If a shape came out wrong it would plan again without that shape and show the number of shapes dropped under the time. On the calculator all 8 passed.
+
+## Where the time goes
+
+`probes/PHASES.py` is `PASFAST5` with a timer around each phase. Its total is a little over `PASFAST5`'s because of the timers.
+
+| Phase | Time | What it covers |
+|---|---|---|
+| Planning | 1.59 s | All 210 rows: the boxes, the lines and their order |
+| Line self-test | 0.41 s | 8 line shapes drawn and read back |
+| Base triangle | 0.16 s | 2 polygons and the read-back of every row's ends |
+| Boxes | 37.02 s | 6,627 `fillRect` calls, including 116 color changes that took 0.54 s |
+| Lines | 5.11 s | 744 `drawLine` calls in 15 colors |
+| Total | 44.29 s | |
+
+The boxes are 84% of the time, and they are small: 3,557 of them paint a single pixel, 963 paint two and 371 paint three. Those counts come from running `PASFAST5`'s planner on a computer.
 
 ## What the probes found about the Evo's Python
 
@@ -108,7 +124,7 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 
 **The interpreter**
 
-- It reports itself as `tipython` 1.13 with Python 3.4.0 syntax. About 163 KB of memory is available to a program.
+- It reports itself as `tipython` 1.13 with Python 3.4.0 syntax. About 163 KB of memory is shared by the stored programs and the running one. With four programs stored (27 KB of source) a program started with 148 KB free; with seven stored (51 KB) `PHASES` failed with `MemoryError` before drawing anything, and the same program ran once three of them were cut down to one line each. `PASFAST5`'s plan takes about 107 KB while it runs, so it needs most of the memory to itself.
 - Importable beyond the TI modules: `sys`, `gc`, `array`, `math`, `random`, `time`, `collections`, `builtins`. There is no `os`, `struct` or `framebuf`. `open` exists, but it returned `None` for the one file tried (`ti_plotlib.py`).
 - `time` has `monotonic`, `sleep`, `ticks_ms` and `ticks_diff`.
 - `x in some_bytearray` raises `NotImplementedError`; use a list.
@@ -124,6 +140,7 @@ EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py --screenshot shot.p
 
 - Names are at most 8 letters and digits.
 - Programs go to RAM, and the Python app only lists programs in RAM. A RAM clear removes them all, so keep copies.
+- Stored programs appear to take memory away from the running one. Keep only the programs in use on the calculator: `PASFAST5` needs about 107 KB free to plan the picture. Sending a one-line file under an old program's name frees its space.
 - **While a program is on screen, send nothing but screenshots.** The calculator's RAM was cleared twice during this work. The second time came right after a file listing was requested while a program's final screen was showing; that request also tells the calculator to go to its home screen. This is the likely cause, not a confirmed one. `tools/screen_kind.py` tells a running program's screen from a menu.
 
 ## Checking programs on a computer

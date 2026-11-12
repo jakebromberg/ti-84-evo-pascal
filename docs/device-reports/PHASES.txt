@@ -1,0 +1,2 @@
+M free at start 147808, after planning 40880
+P plan 1.59 selftest 0.41 (8/8 ok) base 0.16 boxes 37.02 (6627; 116 color changes 0.54) lines 5.11 (744 in 15 colors) total 44.29
