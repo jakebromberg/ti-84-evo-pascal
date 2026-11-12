@@ -8,7 +8,7 @@ Python programs for the TI-84 Evo, plus computer-side tools that check them. Rea
 - Program names on the calculator are at most 8 letters and digits. Name the file to match.
 - Keep hot loops inside a function and bind calls to local names; locals are much faster than globals.
 - Every drawing call costs 4 to 6 ms. Count calls before changing a drawing strategy; `tools/validate.py` prints the counts.
-- `programs/PASFAST2.py` uses only documented calls. Keep it that way; undocumented calls belong in `PASFAST3.py` and the probes.
+- `programs/PASFAST2.py` uses only documented calls. Keep it that way; undocumented calls belong in `PASFAST3.py`, `PASFAST4.py` and the probes.
 - A new undocumented call must be probed on the calculator before a program relies on it. Add what the probe finds to `README.md` and to the stand-ins in `tools/standins/`.
 
 ## Before uploading

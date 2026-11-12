@@ -12,12 +12,13 @@ import screenshot  # noqa: E402
 import triangle  # noqa: E402
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-PASFAST3_SHOT = os.path.join(ROOT, "docs", "pasfast3.png")
+TRIANGLE_SHOT = os.path.join(ROOT, "docs", "pasfast4.png")
+REPORT_SHOT = os.path.join(ROOT, "docs", "device-reports", "GRPROBE2.png")
 
 
 class ScreenshotTests(unittest.TestCase):
     def setUp(self):
-        self.rows = screenshot.load(PASFAST3_SHOT)
+        self.rows = screenshot.load(TRIANGLE_SHOT)
 
     def test_size(self):
         self.assertEqual((len(self.rows), len(self.rows[0])), (240, 320 * 3))
@@ -25,11 +26,19 @@ class ScreenshotTests(unittest.TestCase):
     def test_finished_triangle_is_pixel_exact(self):
         self.assertEqual(check_screenshot.wrong_pixels(self.rows), 0)
 
+    def test_finished_triangle_has_nothing_outside_it(self):
+        self.assertEqual(check_screenshot.stray_pixels(self.rows), 0)
+
+    def test_a_different_screen_is_not_mistaken_for_the_triangle(self):
+        other = screenshot.load(REPORT_SHOT)
+        self.assertGreater(check_screenshot.wrong_pixels(other), 10000)
+        self.assertGreater(check_screenshot.stray_pixels(other), 100)
+
     def test_program_screen_is_classified_as_drawing(self):
         self.assertEqual(screen_kind.kind(self.rows), "drawing")
 
     def test_triangle_screen_has_no_report_block(self):
-        dark = decode_bits.dark_from_png(PASFAST3_SHOT)
+        dark = decode_bits.dark_from_png(TRIANGLE_SHOT)
         self.assertRaises(ValueError, decode_bits.decode, dark)
 
 

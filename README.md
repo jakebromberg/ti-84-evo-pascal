@@ -2,7 +2,7 @@
 
 Python programs for the TI-84 Evo that draw Pascal's triangle mod 16: 210 rows, one pixel per entry, each remainder in its own hue. The repo also holds the benchmarks and probes used to find the fastest way to draw it, and what they revealed about the Evo's Python.
 
-![PASFAST3 on the calculator: the finished triangle, drawn in 50.59 seconds](docs/pasfast3.png)
+![PASFAST4 on the calculator: the finished triangle, drawn in 48.83 seconds](docs/pasfast4.png)
 
 ## Results
 
@@ -15,6 +15,7 @@ All times were measured on a TI-84 Evo running OS 7.0.0.3996. Every version draw
 | `PASFAST` | One background box per row, then the other colors | 11,713 boxes, 28 color changes | 73.4 s |
 | `PASFAST2` | Layered boxes: long ones first, shorter ones on top | 9,111 boxes, 125 color changes | 58.6 s |
 | `PASFAST3` | The same layers through the native `ti_graphics` calls | 9,111 boxes, 125 color changes | 50.6 s |
+| `PASFAST4` | The bottom layer as two polygons instead of 210 boxes | 8,901 boxes plus any repairs, 2 polygons, 125 color changes | 48.8 s |
 
 The row math is not the bottleneck: computing all 210 rows takes 0.04 s. Nearly all the time is the number of drawing calls, at 4 to 6 ms each.
 
@@ -27,7 +28,8 @@ The name on the calculator is the file name without `.py`, cut to 8 characters.
 | `programs/PASCAL.py` | The original: one `plot_xy` and one `set_color` per entry. Simple and slow. |
 | `programs/PASFAST.py` | Row backgrounds. Documented calls only. |
 | `programs/PASFAST2.py` | Layered boxes. Documented calls only. |
-| `programs/PASFAST3.py` | Layered boxes through undocumented native calls. The fastest. |
+| `programs/PASFAST3.py` | Layered boxes through undocumented native calls. |
+| `programs/PASFAST4.py` | `PASFAST3` with the bottom layer drawn as two polygons. The fastest. |
 | `benchmarks/PASBENCH.py` | Draws the triangle row by row and then color by color, and times each. |
 | `benchmarks/CALLBENCH.py` | Times `set_color`, `fill_rect`, `plot_xy` and `ti_image.set_pixel` per call. On the calculator as `CALLBENC`. |
 | `benchmarks/POLYBNCH.py` | Times `draw_line`, `draw_poly`, `fill_poly` and `ti_plotlib.scatter`, and draws test shapes. |
@@ -35,6 +37,7 @@ The name on the calculator is the file name without `.py`, cut to 8 characters.
 | `probes/GRPROBE.py` | Finds argument counts, speed and exact pixel behavior of the native `ti_graphics` calls. |
 | `probes/GRPROBE2.py` | Tests `drawPolyLine`, `fillPolygon`, `drawString` and `pushImage`/`popImage`. |
 | `probes/IMGPROBE.py` | Tests whether `ti_image.new_image` can make an off-screen image. It cannot. |
+| `probes/TRIPROBE.py` | Finds which corner points make `fillPolygon` paint a triangle's rows exactly. |
 
 The probes' reports are too long for the screen, so each draws its report as a block of black pixels that `tools/decode_bits.py` reads back from a screenshot. The decoded reports are in `docs/device-reports/`.
 
@@ -44,6 +47,7 @@ The probes' reports are too long for the screen, so each draws its report as a b
 2. **Layered boxes.** For each row, the first color gets one box from its first entry to its last. Whatever lies between its entries is planned the same way one layer deeper and painted over that box later. This needs 9,111 boxes where one box per run needs 14,992. The best possible layering needs 7,601, but finding it takes about 4 million steps on the calculator, more than it saves.
 3. **One color at a time.** A color change costs about 4 ms, so boxes are grouped by layer and color and each group is drawn in one go, lower layers first.
 4. **Native calls.** `ti_draw` is a Python wrapper around the native `ti_graphics` module. Calling `ti_graphics.fillRect` directly saves about 0.8 ms per box.
+5. **Polygons for the bottom layer.** Every row starts and ends with 1, so the bottom layer is one full-width box per row in the same color: a solid triangle. `PASFAST4` paints it with two `fillPolygon` calls, then reads both ends of every row back with `getPixel` and repairs any pixel the polygons got wrong. The calculator's result matched the exact picture on every pixel.
 
 ## What the probes found about the Evo's Python
 
@@ -62,7 +66,7 @@ These are measurements from one calculator on OS 7.0.0.3996. The undocumented fu
 | `ti_graphics.drawLine` | 6.5 ms |
 | `ti_image.set_pixel` | 7.4 ms |
 | `ti_draw.draw_line` | 8.3 ms |
-| `ti_graphics.fillPolygon`, 4 points | 11.3 ms |
+| `ti_graphics.fillPolygon` | 5 to 13 ms, whether it fills a 15-row triangle or the whole 210-row one |
 | `ti_draw.plot_xy` | 12.5 ms |
 | `ti_graphics.drawPolyLine` | 6.2 ms for 2 points, about 2 ms per extra point, 50 points at most |
 | `ti_graphics.drawString` | 4.5 ms for 1 character, about 0.13 ms per extra character |
@@ -88,6 +92,7 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 - `fillRect(x, y, w, h)` fills exactly `w` by `h` pixels, and 1×1 works. `drawLine` includes both end points. `drawRect(x, y, w, h)` outlines `w + 1` by `h + 1` pixels.
 - `setColor` takes one `(r, g, b)` tuple. `setPixel(x, y, (r, g, b))` takes the color as its third argument. `drawPolyLine` and `fillPolygon` take one list of `(x, y)` tuples.
 - `popImage()` restores a region saved by `pushImage(x, y, w, h)` in the same place. It cannot copy a region elsewhere.
+- `fillPolygon` leaves out the bottom row of the shape, and its slanted edges do not follow the triangle's staircase exactly. For the full triangle (top at screen (159, 30), bottom row x 55 to 264 at y 239), corners `(159, 30), (54, 240), (264, 240)` get every right end exactly but miss the leftmost pixel on 41 rows; corners `(159, 30), (54, 239), (264, 239)` get the left edge exactly on every row but the last and spill one pixel past the right edge on 41 rows. An upside-down 15-row triangle drawn with its exact corners is right on every row except its one-pixel tip. `docs/device-reports/TRIPROBE.txt` has all 32 corner choices tried.
 - `ti_image.new_image` and `ti_image.copy_image` raise "Unsupported operation."
 
 **The interpreter**
@@ -102,7 +107,7 @@ Reading the screen is cheap; every call that changes the screen or the drawing s
 The programs were sent over USB with [evo_usb_py](https://github.com/jakebromberg/evo_usb_py), a fork with the OS-update command removed:
 
 ```sh
-EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py programs/PASFAST3.py PASFAST3
+EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py programs/PASFAST4.py PASFAST4
 EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py --screenshot shot.png
 ```
 
@@ -118,16 +123,16 @@ EVO_USB_SERIAL=/dev/cu.usbmodemRTX_DUMMY1 python3 evo_usb.py --screenshot shot.p
 sh tools/check.sh
 ```
 
-- The four triangle programs must draw the exact picture: every pixel right, nothing outside the triangle, and no text over it.
+- The five triangle programs must draw the exact picture: every pixel right, nothing outside the triangle, and no text over it.
 - Benchmarks and probes only have to finish without an error.
 - The tools' own tests run last, against a real screenshot and a saved device report.
 
-The stand-ins in `tools/standins/` follow the behavior listed above. They do not model memory limits, timing (the clock never advances), or anything the probes did not measure, so a pass here is necessary but not sufficient.
+The stand-ins in `tools/standins/` follow the behavior listed above. They do not model memory limits, timing (the clock never advances), or anything the probes did not measure, so a pass here is necessary but not sufficient. In particular the stand-in `fillPolygon` uses an ordinary scanline fill, not the calculator's edge rule, so `PASFAST4` passes there only because its read-back repair works.
 
 | Tool | Use |
 |---|---|
 | `tools/validate.py [--run-only] <program.py>` | Run one program and compare its drawing with the exact triangle. |
-| `tools/check_screenshot.py <shot.png>` | Check a real screenshot against the exact triangle. |
+| `tools/check_screenshot.py <shot.png>` | Check a real screenshot against the exact triangle, including stray pixels outside it. |
 | `tools/decode_bits.py <shot.png>` | Decode a probe's pixel-block report. |
 | `tools/screen_kind.py <shot.png>` | Print `drawing`, `python-menu` or `other`. |
 

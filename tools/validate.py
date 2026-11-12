@@ -13,6 +13,7 @@ import sys
 import triangle
 
 STANDINS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "standins")
+WHITE = (255, 255, 255)
 
 
 def run(program):
@@ -52,7 +53,8 @@ def main():
     expected = {p: triangle.COLORS[i] for p, i in triangle.expected().items()}
     missing = sum(p not in pixels for p in expected)
     wrong = sum(p in pixels and pixels[p] != expected[p] for p in expected)
-    extra = sum(p not in expected for p in pixels)
+    # Painting white outside the triangle is the same as leaving the background alone
+    extra = sum(p not in expected and pixels[p] != WHITE for p in pixels)
     overlap = [t[4] for t in texts if any(t[0] <= x <= t[2] and t[1] <= y <= t[3] for (x, y) in expected)]
     ok = not (missing or wrong or extra or overlap)
     print(f"{name}: {'PASS' if ok else 'FAIL'} - missing {missing}, wrong {wrong}, extra {extra}, text overlap {overlap or 'none'}")
