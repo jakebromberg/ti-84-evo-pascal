@@ -1,0 +1,20 @@
+[ti_draw] <module 'ti_draw' from 'ti_draw.mpy'> file=ti_draw.mpy extra: getKey isnan version gr _xy _clipseg xmin xmax ymin ymax _rdelta _ydelta _xdelta tidrawException _DIM_W _DIM_H _ORIGIN_Y _FONT_MEDIUM_H tidrawlocal _wh _position _r use_buffer paint_buffer _cart _pen_color _pen_size _pen_style missing: 
+[ti_system] <module 'ti_system' from 'ti_system.py'> file=ti_system.py extra: disp_cursor getKey missing: 
+[ti_plotlib] <module 'ti_plotlib' from 'ti_plotlib.py'> file=ti_plotlib.py extra: copysign escape isnan monotonic sleep sqrt sys gr _write tiplotlibException tilocal _excpt _xy _strtest _numtest _xytest _mark _clipseg xscl yscl _rdelta _ydelta _xdelta _pencolor _pensize _penstyle missing: 
+[ti_image] <module 'ti_image' from 'ti_image.mpy'> file=ti_image.mpy extra: getKey version gr _DIM_W _DIM_H _ORIGIN_Y tiimageException copy_image new_image _image_name missing: 
+[ti_graphics] <module 'ti_graphics'> file=ERR 'module' object has no attribute '__file__' extra: Color Font Style checkImageExists cls drawLine drawPolyLine drawRect drawString fillCircle fillPolygon fillRect getPixel popImage pushImage setColor setPen setPixel missing: 
+types: fill_rect=<function fill_rect at 0x200f1dc0> set_color=<function set_color at 0x200f1e70> exc=<class 'tidrawException'>
+[sys] <module 'sys'> byteorder exc_info exit implementation maxsize modules platform print_exception stderr stdin stdout version version_info
+[gc] <module 'gc'> collect disable enable isenabled mem_alloc mem_free threshold
+[time] <module 'utime'> monotonic sleep ticks_diff ticks_ms
+importable: sys gc array math random time collections ucollections builtins
+builtins: open memoryview exec eval compile input help globals
+version=3.4.0
+impl=(name='tipython', version=(1, 13, 0), mpy=773)
+platform=TI-Python
+path=ERR 'module' object has no attribute 'path'
+mem_free=97136
+mem_alloc=66016
+cwd=ERR no module named 'os'
+ls=ERR no module named 'os'
+ls/=ERR no module named 'os'

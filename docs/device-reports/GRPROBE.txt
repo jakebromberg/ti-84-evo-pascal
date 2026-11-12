@@ -1,0 +1,21 @@
+[gr] Color=<class 'Color'>; Font=<class 'Font'>; Style=<class 'Style'>; cls=<function>; hsv_to_rgb=<function>; popImage=<function>; pushImage=<function>
+[gr args] drawLine(): function takes 4 positional arguments but 0 were given; drawPolyLine(): function takes 1 positional arguments but 0 were given; drawRect(): function takes 4 positional arguments but 0 were given; drawString(): function takes 3 positional arguments but 0 were given; fillCircle(): function takes 3 positional arguments but 0 were given; fillPolygon(): function takes 1 positional arguments but 0 were given; fillRect(): function takes 4 positional arguments but 0 were given; getPixel(): function takes 2 positional arguments but 0 were given; setColor(): function takes 1 positional arguments but 0 were given; setPen(): function takes 2 positional arguments but 0 were given; setPixel(): function takes 3 positional arguments but 0 were given; drawArc(): function takes 6 positional arguments but 0 were given; fillArc(): function takes 6 positional arguments but 0 were given; drawImage(): function takes 3 positional arguments but 0 were given; setFont(): function takes 1 positional arguments but 0 were given; string_size(): function missing 1 required positional arguments; checkImageExists(): function takes 1 positional arguments but 0 were given
+[gr.Color] BLACK BLUE CYAN GREEN MAGENTA RED WHITE YELLOW
+[gr.Font] ICON LARGE MEDIUM SMALL SMALLD
+[gr.Style] DASHED DOTTED SMOOTH
+[ti_draw] getKey=<function>; isnan=<function>; version=1.0.0; _xy=<function _xy at 0x200f14f0>; _clipseg=<function _clipseg at 0x200f15a0>; xmin=0; xmax=319; ymin=0; ymax=209; _rdelta=1e-05; _ydelta=209; _xdelta=319; _DIM_W=319; _DIM_H=209; _ORIGIN_Y=30; _FONT_MEDIUM_H=17; tidrawException=<class 'tidrawException'>; tidrawlocal=<class 'tidrawlocal'>; _wh=<function _wh at 0x200f1530>; _position=<function _position at 0x200f1460>; _r=<function _r at 0x200f1570>; use_buffer=<function use_buffer at 0x200f17d0>; paint_buffer=<function paint_buffer at 0x200f17e0>; _cart=0; _pen_color=(0, 0, 0); _pen_size=0; _pen_style=0
+[ti_image] getKey=<function>; version=1.0.0; new_image=<function new_image at 0x200f8a00>; copy_image=<function copy_image at 0x200f89e0>; _DIM_W=319; _DIM_H=209; _ORIGIN_Y=30; tiimageException=<class 'tiimageException'>; _image_name=
+[ti_image args] new_image(): new_image() takes 2 positional arguments but 0 were given; copy_image(): Unsupported operation.
+[gr stack args] pushImage(): function takes 4 positional arguments but 0 were given
+setColor form: setColor((r,g,b)) 
+setColor 3.938 ms
+fillRect 5.682 ms
+setPixel form: setPixel(x,y,(r,g,b)) 
+setPixel 6.168 ms
+drawLine 6.543 ms
+getPixel 0.053 ms
+getPixel value (0, 162, 0)
+ti_draw.fill_rect 6.520 ms
+ti_draw.set_color 4.122 ms
+[plotlib] open ERR 'NoneType' object has no attribute 'read'
+shape errors: 

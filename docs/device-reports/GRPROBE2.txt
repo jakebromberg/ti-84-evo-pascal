@@ -1,0 +1,30 @@
+popImage: function takes 0 positional arguments but 9 were given
+cls: function takes 0 positional arguments but 9 were given
+ti_image.load_image: load_image() takes 1 positional arguments but 9 were given
+ti_image.show_image: show_image() takes 2 positional arguments but 9 were given
+ti_image.clear_image: clear_image() takes 5 positional arguments but 9 were given
+ti_image.set_pixel: set_pixel() takes 3 positional arguments but 9 were given
+ti_image.get_pixel: get_pixel() takes 2 positional arguments but 9 were given
+ti_image.new_image: new_image() takes 3 positional arguments but 9 were given
+ti_image.copy_image: copy_image() takes 1 positional arguments but 9 were given
+polyline form: tuples 
+polyline 2 pts 6.200 ms
+polyline 20 pts 42.700 ms
+polyline 100 pts ERR expected a list of up to 50 (x,y) vertices.
+polyline 200 pts ERR expected a list of up to 50 (x,y) vertices.
+polyline 400 pts ERR expected a list of up to 50 (x,y) vertices.
+polyline 20 pts long 54.700 ms
+comb draw: None
+comb pixels x98-114 y99-102: 00000000000000000/00110110110001100/00011111111110000/00000000000000000
+offscreen: None
+offscreen pixels x98-110 y238-239: 0000000000000/0011100011100
+fillPolygon 4 pts 11.320 ms
+fillPolygon pixels x198-206 y98-105: 000000000/000000000/001111100/001111100/001111100/000000000/000000000/000000000
+drawString 1 char 4.540 ms
+drawString 20 chars 7.000 ms
+push: None
+pop(): None
+after pop x98-107 y99-104: 0000000000/0011111100/0011111100/0011111100/0011111100/0000000000
+push+pop pair 7.700 ms
+push+pop pair 100x60 8.400 ms
+fillRect in loop 5.522 ms

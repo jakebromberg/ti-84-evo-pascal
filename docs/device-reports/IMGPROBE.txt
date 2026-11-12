@@ -1,0 +1,4 @@
+name before: ''
+new_image(8,6,(255,0,0)) ERR Unsupported operation.
+new_image('PROBE',8,6) ERR Unsupported operation.
+name after: ''
