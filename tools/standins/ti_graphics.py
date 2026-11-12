@@ -7,7 +7,7 @@ class Color: RED = 1
 class Font: SMALL = 1
 class Style: THIN = 1
 def hsv_to_rgb(h, s, v): return (0, 0, 0)
-ti_draw.calls.update({"fillRect": 0, "setColor": 0, "fillPolygon": 0, "getPixel": 0})
+ti_draw.calls.update({"fillRect": 0, "setColor": 0, "fillPolygon": 0, "getPixel": 0, "drawLine": 0})
 def setColor(c):
     ti_draw.calls["setColor"] += 1
     if not isinstance(c, tuple): raise TypeError("can't convert int to tuple")
@@ -20,7 +20,9 @@ def setPixel(x, y, c): ti_draw._c[0] = c; ti_draw._put(x, y - 30)
 def getPixel(x, y):
     ti_draw.calls["getPixel"] += 1
     return ti_draw.pixels.get((x, y - 30), (255, 255, 255))
-def drawLine(x1, y1, x2, y2): ti_draw._line(x1, y1 - 30, x2, y2 - 30)
+def drawLine(x1, y1, x2, y2):
+    ti_draw.calls["drawLine"] += 1
+    ti_draw._line(x1, y1 - 30, x2, y2 - 30)
 def drawRect(x, y, w, h): pass
 def cls(): ti_draw.clear()
 def pushImage(a, b): pass
