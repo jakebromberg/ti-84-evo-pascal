@@ -178,5 +178,6 @@ The stand-ins in `tools/standins/` follow the behavior listed above. They do not
 
 ## Other files
 
+- `docs/prior-art.md` surveys earlier work behind each optimization, and lists the parts for which none was found.
 - `docs/device-reports/` holds the decoded probe reports, plus the `GRPROBE2` screenshot the tests decode.
 - `backup/PISUMSEQ.bin` is an unrelated TI-BASIC program saved from the calculator with `evo_usb.py --get-file PISUMSEQ 2` before a RAM clear. It is the raw variable as the tool returned it; sending it back is untested.
