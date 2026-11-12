@@ -85,23 +85,25 @@ class FallbackTests(unittest.TestCase):
 
 
 class MemoryTests(unittest.TestCase):
-    def test_pasfast6_plans_in_a_small_heap(self):
-        """PASFAST6 must compile and plan the picture in a 200k MicroPython heap on this computer.
+    def test_planning_fits_in_a_small_heap(self):
+        """PASFAST5 and PASFAST6 must compile and plan the picture in a 200k MicroPython heap on this computer.
 
-        The calculator ran out of memory in the planner when the same measurement gave about 280k, and ran PASFAST5 at 277k only with little else stored, so 200k leaves a margin. The numbers are for 64-bit MicroPython, where lists take twice the room they do on the calculator.
+        The calculator ran out of memory in the planner when the same measurement gave about 280k, so 200k leaves a margin. The numbers are for 64-bit MicroPython, where lists take twice the room they do on the calculator.
         """
-        with open(os.path.join(ROOT, "programs", "PASFAST6.py")) as f:
-            source = f.read()
-        self.assertEqual(source.count("COMPUTE_ONLY = False"), 1)
-        with tempfile.TemporaryDirectory() as folder:
-            program = os.path.join(folder, "PASFAST6.py")
-            with open(program, "w") as f:
-                f.write(source.replace("COMPUTE_ONLY = False", "COMPUTE_ONLY = True"))
-            result = subprocess.run(["micropython", "-X", "heapsize=200k", "runprog.py", program],
-                                    cwd=os.path.join(ROOT, "tools", "standins"), capture_output=True, text=True)
-        with open(os.path.join(ROOT, "tools", "standins", "out.txt")) as f:
-            error = f.readline().strip()
-        self.assertEqual(error, "ERR", result.stdout[-400:])
+        for name in ("PASFAST5", "PASFAST6"):
+            with self.subTest(program=name):
+                with open(os.path.join(ROOT, "programs", name + ".py")) as f:
+                    source = f.read()
+                self.assertEqual(source.count("COMPUTE_ONLY = False"), 1)
+                with tempfile.TemporaryDirectory() as folder:
+                    program = os.path.join(folder, name + ".py")
+                    with open(program, "w") as f:
+                        f.write(source.replace("COMPUTE_ONLY = False", "COMPUTE_ONLY = True"))
+                    result = subprocess.run(["micropython", "-X", "heapsize=200k", "runprog.py", program],
+                                            cwd=os.path.join(ROOT, "tools", "standins"), capture_output=True, text=True)
+                with open(os.path.join(ROOT, "tools", "standins", "out.txt")) as f:
+                    error = f.readline().strip()
+                self.assertEqual(error, "ERR", result.stdout[-400:])
 
 
 if __name__ == "__main__":
