@@ -21,6 +21,7 @@ Python programs for the TI-84 Evo, plus computer-side tools that check them. Rea
 - While a program is on screen, send nothing but screenshots. A file listing sent during a program's final screen was followed by a RAM clear. Check with `tools/screen_kind.py` first.
 - Never send an OS update.
 - Programs live in RAM and a RAM clear removes them. Anything on the calculator that is not in this repo should be saved before running a probe.
+- Stored programs appear to share memory with the running one. A `MemoryError` before anything is drawn usually means too much is stored: replace finished probes with a one-line file of the same name, and keep a new program's source under about 10 KB.
 
 ## Conventions
 
